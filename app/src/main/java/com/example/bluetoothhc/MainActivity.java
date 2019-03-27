@@ -1,5 +1,6 @@
 package com.example.bluetoothhc;
 
+import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
@@ -12,17 +13,25 @@ import android.content.IntentFilter;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.example.bluetoothhc.R.id.listView;
 
 public class MainActivity extends AppCompatActivity {
+    private  BluetoothSocket socket;
+    private  BluetoothDevice mmDevice;
+    private UUID DEFAULT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
     ListView listView;
     TextView statusView;
     Button searchButton;
@@ -32,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
     //defining a common tag
     private final static String TAG = "Main Activity";
     //BT adapter is one for the entire system so define it globally
-    BluetoothAdapter bluetoothAdapter;
+
+    private BluetoothAdapter bluetoothAdapter;
 
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -55,18 +65,20 @@ public class MainActivity extends AppCompatActivity {
                 //distance between deivce or signal strength, more negative favourable
                 //String rssi = Integer.toString(intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE));
                 Log.i("device found","Name: "+ name +"Address: " + Address );
-                String deviceInfo = "";
-                if(name== null || name.equals("")){
-                    deviceInfo = Address;
-                }
-                else{
-                    deviceInfo = name ;
-                }
+//                String deviceInfo = "";
+//                if(name== null || name.equals("")){
+//                    deviceInfo += Address;
+//                }
+//                else{
+//                    deviceInfo += name ;
+//                }
+                String deviceInfo=Address;
                 if(!bluetoothDevices.contains(deviceInfo)) {
                     bluetoothDevices.add(deviceInfo);
                 }
                 arrayAdapter.notifyDataSetChanged();
             }
+
         }
     };
 
@@ -78,6 +90,11 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                 MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+        if(bluetoothAdapter.isDiscovering()){
+            bluetoothAdapter.cancelDiscovery();
+            Log.i("SearchCliced","Canceling discovery");
+        }
+        Log.i("SearchCliced","Starting Discovering");
         bluetoothAdapter.startDiscovery();
     }
 
@@ -117,29 +134,83 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         intentFilter.addAction(BluetoothDevice.EXTRA_DEVICE);
+        registerReceiver(broadcastReceiver, intentFilter);
+// WE NEED TO CREATE ANOTHER LIST FOR PAIRED DEVICES FOR ONLCIK EVENTS FUNCTION
+//        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+//
+//        if (pairedDevices.size() > 0) {
+//            // There are paired devices. Get the name and address of each paired device.
+//            for (BluetoothDevice device : pairedDevices) {
+//                String deviceName = device.getName();
+//                String deviceHardwareAddress = device.getAddress(); // MAC address
+//                Log.i("device",""+deviceName +" "+deviceHardwareAddress);
+//                if(deviceName== null || deviceName.equals("")){
+//                    bluetoothDevices.add(deviceHardwareAddress );
+//                }
+//                else{
+//                    bluetoothDevices.add(deviceName );
+//                }
+//            }
+//        }
 
 
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-                Log.i("device",""+deviceName +" "+deviceHardwareAddress);
-                if(deviceName== null || deviceName.equals("")){
-                    bluetoothDevices.add(deviceHardwareAddress );
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            Log.i("clickList1","itemclicked");
+
+            String address = bluetoothDevices.get(position);
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
+            Log.d(TAG, address);
+            BluetoothSocket tmp=null;
+            mmDevice = device;
+            try {
+                // Use the UUID of the device that discovered // TODO Maybe need extra device object
+                if (mmDevice != null)
+                {
+                    Log.i(TAG, "Device Name: " + mmDevice.getName());
+                    Log.i(TAG, "Device UUID: " + mmDevice.getUuids()[0].getUuid());
+                    tmp = device.createRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
+
                 }
-                else{
-                    bluetoothDevices.add(deviceName );
+                else Log.d(TAG, "Device is null.");
+            }
+            catch (NullPointerException e)
+            {
+                Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
+                try {
+                    tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
+                } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
             }
+            catch (IOException e) { }
+
+            socket = tmp;
+            bluetoothAdapter.cancelDiscovery();
+
+            try {
+                // Connect to the remote device through the socket. This call blocks
+                // until it succeeds or throws an exception.
+                socket.connect();
+                Log.i(TAG,"connection_susscful");
+            } catch (IOException connectException) {
+                // Unable to connect; close the socket and return.
+                try {
+                    socket.close();
+                } catch (IOException closeException) {
+                    Log.e(TAG, "Could not close the client socket", closeException);
+                }
+                return;
+            }
+
         }
-
-        registerReceiver(broadcastReceiver, intentFilter);
-
+    });
 
     }
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
