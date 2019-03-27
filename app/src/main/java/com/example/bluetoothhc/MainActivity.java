@@ -136,22 +136,24 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothDevice.EXTRA_DEVICE);
         registerReceiver(broadcastReceiver, intentFilter);
 // WE NEED TO CREATE ANOTHER LIST FOR PAIRED DEVICES FOR ONLCIK EVENTS FUNCTION
-//        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-//
-//        if (pairedDevices.size() > 0) {
-//            // There are paired devices. Get the name and address of each paired device.
-//            for (BluetoothDevice device : pairedDevices) {
-//                String deviceName = device.getName();
-//                String deviceHardwareAddress = device.getAddress(); // MAC address
-//                Log.i("device",""+deviceName +" "+deviceHardwareAddress);
-//                if(deviceName== null || deviceName.equals("")){
-//                    bluetoothDevices.add(deviceHardwareAddress );
-//                }
-//                else{
-//                    bluetoothDevices.add(deviceName );
-//                }
-//            }
-//        }
+        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+
+        if (pairedDevices.size() > 0) {
+            // There are paired devices. Get the name and address of each paired device.
+            for (BluetoothDevice device : pairedDevices) {
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+                Log.i("device",""+deviceName +" "+deviceHardwareAddress);
+                if(deviceName== null || deviceName.equals("")){
+                    bluetoothDevices.add(deviceHardwareAddress );
+                }
+                else{
+                    bluetoothDevices.add(deviceHardwareAddress );
+
+                    //  bluetoothDevices.add(deviceName );
+                }
+            }
+        }
 
 
 
@@ -160,19 +162,22 @@ public class MainActivity extends AppCompatActivity {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Log.i("clickList1","itemclicked");
 
+
             String address = bluetoothDevices.get(position);
             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
             Log.d(TAG, address);
+
             BluetoothSocket tmp=null;
+
             mmDevice = device;
             try {
-                // Use the UUID of the device that discovered // TODO Maybe need extra device object
+                // Use the UUID of the device that discovered //
                 if (mmDevice != null)
                 {
-                    Log.i(TAG, "Device Name: " + mmDevice.getName());
-                    Log.i(TAG, "Device UUID: " + mmDevice.getUuids()[0].getUuid());
+                    Log.i(TAG, "Device Name1: " + mmDevice.getName());
+                    Log.i(TAG, "Device UUID1: " + mmDevice.getUuids()[0].getUuid());
                     tmp = device.createRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
-
+                    Log.i("DEvice UUID","socket created successfully");
                 }
                 else Log.d(TAG, "Device is null.");
             }
@@ -181,24 +186,30 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
                 try {
                     tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
+                    Log.i("default UUID","socket created successfully");
                 } catch (IOException e1) {
                     e1.printStackTrace();
+                    Log.i("IOEX","printStack");
                 }
             }
-            catch (IOException e) { }
+            catch (IOException e) {
+                Log.i("IOException","2");
+            }
 
             socket = tmp;
-            bluetoothAdapter.cancelDiscovery();
 
+            bluetoothAdapter.cancelDiscovery();
             try {
+                Log.i(TAG,"Trying to connect");
                 // Connect to the remote device through the socket. This call blocks
                 // until it succeeds or throws an exception.
                 socket.connect();
-                Log.i(TAG,"connection_susscful");
+                Log.i(TAG,"connection_successful");
             } catch (IOException connectException) {
                 // Unable to connect; close the socket and return.
                 try {
                     socket.close();
+                    Log.i(TAG,"sockket closed");
                 } catch (IOException closeException) {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
