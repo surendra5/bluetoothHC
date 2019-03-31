@@ -19,7 +19,8 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.os.Build;
+import android.os.Bundle;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = "Main Activity";
     //BT adapter is one for the entire system so define it globally
 
-    private BluetoothAdapter bluetoothAdaptera;
+    BluetoothAdapter bluetoothAdaptera;
 
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -177,58 +178,63 @@ public class MainActivity extends AppCompatActivity {
             BluetoothSocket tmp=null;
 
             bluetoothAdaptera.cancelDiscovery();
-            mmDevice = device;
-            try {
-                // Use the UUID of the device that discovered //
-                if (mmDevice != null)
-                {
-                    Log.i(TAG, "Device Name1: " + mmDevice.getName());
-                    Log.i(TAG, "Device UUID1: " + mmDevice.getUuids()[0].getUuid());
-                    tmp = device.createRfcommSocketToServiceRecord( mmDevice.getUuids()[0].getUuid());
-//                    createMethod = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] { int.class });
-//                    tmp = (BluetoothSocket)createMethod.invoke(device, 1);
-
-                    // tmp = device.createInsecureRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
-                    Log.i("DEvice UUID","socket created successfully with device uuid");
-                }
-                else Log.d(TAG, "Device is null.");
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
+                Log.d(TAG, "Trying to pair with " + device.getName());
+                device.createBond();
             }
-            catch (NullPointerException e)
-            {
-                Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
-                try {
-                    tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
-                    Log.i("default UUID","socket created successfully with default uuid");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                    Log.i("IOEX","printStack");
-                }
-            }
-            catch (IOException e) {
-                Log.i("IOException","2");
-            }
-
-            socket = tmp;
-
-            try {
-                Log.i(TAG,"Trying to connect");
-                // Connect to the remote device through the socket. This call blocks
-                // until it succeeds or throws an exception.
-                socket.connect();
-                Log.i(TAG,"connection_successful");
-            } catch (IOException connectException) {
-                // Unable to connect; close the socket and return.
-                try {
-                    socket.close();
-                    Log.i(TAG,"connection failed - socket closed");
-                } catch (IOException closeException) {
-                    Log.e(TAG, "Could not close the client socket", closeException);
-                }
-                return;
-            }
+//            mmDevice = device;
+//            try {
+//                // Use the UUID of the device that discovered //
+//                if (mmDevice != null)
+//                {
+//                    Log.i(TAG, "Device Name1: " + mmDevice.getName());
+//                    Log.i(TAG, "Device UUID1: " + mmDevice.getUuids()[0].getUuid());
+//                    tmp = device.createRfcommSocketToServiceRecord( mmDevice.getUuids()[0].getUuid());
+////                    createMethod = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] { int.class });
+////                    tmp = (BluetoothSocket)createMethod.invoke(device, 1);
+//
+//                    // tmp = device.createInsecureRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
+//                    Log.i("DEvice UUID","socket created successfully with device uuid");
+//                }
+//                else Log.d(TAG, "Device is null.");
+//            }
+//            catch (NullPointerException e)
+//            {
+//                Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
+//                try {
+//                    tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
+//                    Log.i("default UUID","socket created successfully with default uuid");
+//                } catch (IOException e1) {
+//                    e1.printStackTrace();
+//                    Log.i("IOEX","printStack");
+//                }
+//            }
+//            catch (IOException e) {
+//                Log.i("IOException","2");
+//            }
+//
+//            socket = tmp;
+//
+//            try {
+//                Log.i(TAG,"Trying to connect");
+//                // Connect to the remote device through the socket. This call blocks
+//                // until it succeeds or throws an exception.
+//                socket.connect();
+//                Log.i(TAG,"connection_successful");
+//            } catch (IOException connectException) {
+//                // Unable to connect; close the socket and return.
+//                try {
+//                    socket.close();
+//                    Log.i(TAG,"connection failed - socket closed");
+//                } catch (IOException closeException) {
+//                    Log.e(TAG, "Could not close the client socket", closeException);
+//                }
+//                return;
+//            }
 
         }
-    });
+    }
+    );
 
     }
 
