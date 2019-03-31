@@ -30,8 +30,8 @@ import static com.example.bluetoothhc.R.id.listView;
 public class MainActivity extends AppCompatActivity {
     private  BluetoothSocket socket;
     private  BluetoothDevice mmDevice;
-    private UUID DEFAULT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
+   // private UUID DEFAULT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+   static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     ListView listView;
     TextView statusView;
     Button searchButton;
@@ -82,9 +82,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void startBlu(View view ){
 
-    }
     public void SearchClicked(View view){
         arrayAdapter.clear();
         statusView.setText("Searching...");
@@ -169,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i("clickList1","itemclicked");
 
 
-            String address = bluetoothDevices.get(position);
+            String address = (String)arrayAdapter.getItem(position);
             BluetoothDevice device = bluetoothAdaptera.getRemoteDevice(address);
             Log.i("BTDevice C Name", device.getAddress());
             Log.d(TAG, address);
@@ -197,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
                 try {
-                    tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
+                    tmp = device.createRfcommSocketToServiceRecord(myUUID);
                     Log.i("default UUID","socket created successfully with default uuid");
                 } catch (IOException e1) {
                     e1.printStackTrace();
