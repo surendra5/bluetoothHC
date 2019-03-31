@@ -176,27 +176,27 @@ public class MainActivity extends AppCompatActivity {
             }
             mmServerSocket = tmp;
             BluetoothSocket socket=null;
-            try {
-                Log.i(TAG, "Socket's accept()?????");
-                socket = mmServerSocket.accept();
-                Log.i(TAG, "Socket's accept() method passed");
-                if(socket != null){
-                    try {
-                        socket.connect();
-                        Log.i(TAG, "Socket connect passed part 1");
-                    } catch (IOException e) {
-                        Log.i(TAG, "Socket connect fails part 1");
-                    }
+            while(socket==null) {
+                try {
+                    Log.i(TAG, "Socket's accept()?????");
+                    socket = mmServerSocket.accept();
+                    Log.i(TAG, "Socket's accept() method passed");
+
+                } catch (IOException e) {
+                    Log.i(TAG, "Socket's accept() method failed");
                 }
-            } catch (IOException e) {
-                Log.i(TAG, "Socket's accept() method failed");
+                if (socket != null) {
+                    Log.i("socket", "not nULL");
+                    break;
+                }
             }
             Log.i(TAG, "SocketLLLLLLLLLLLLLLLLLLLLLLL");
-
+          //  socket=tmp2;
 
             bluetoothAdaptera.cancelDiscovery();
 
             BluetoothDevice device = socket.getRemoteDevice();
+
            final BluetoothSocket soc;
             BluetoothSocket tmpSoc=null;
             try{
