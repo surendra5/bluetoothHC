@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = "Main Activity";
     //BT adapter is one for the entire system so define it globally
 
-    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothAdapter bluetoothAdaptera;
 
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -82,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void startBlu(View view ){
+
+    }
     public void SearchClicked(View view){
         statusView.setText("Searching...");
         searchButton.setEnabled(false);
@@ -90,12 +93,12 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                 MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
-        if(bluetoothAdapter.isDiscovering()){
-            bluetoothAdapter.cancelDiscovery();
+        if(bluetoothAdaptera.isDiscovering()){
+            bluetoothAdaptera.cancelDiscovery();
             Log.i("SearchCliced","Canceling discovery");
         }
         Log.i("SearchCliced","Starting Discovering");
-        bluetoothAdapter.startDiscovery();
+        bluetoothAdaptera.startDiscovery();
     }
 
     @Override
@@ -112,10 +115,10 @@ public class MainActivity extends AppCompatActivity {
         listView.setAdapter(arrayAdapter);
 
         //getting the BT adapter
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdaptera = BluetoothAdapter.getDefaultAdapter();
 
         // check if bluetooth adapter is present in the device
-        if(bluetoothAdapter == null){
+        if(bluetoothAdaptera == null){
             Toast.makeText(getApplicationContext(),"Device doesn't support Bluetooth", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -123,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
         int REQUEST_ENABLE_BT = 1;
         //check if BT is enabled
-        if(!bluetoothAdapter.isEnabled()){
+        if(!bluetoothAdaptera.isEnabled()){
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBTIntent, REQUEST_ENABLE_BT);
         }
@@ -134,9 +137,11 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         intentFilter.addAction(BluetoothDevice.EXTRA_DEVICE);
+        intentFilter.addAction(BluetoothDevice.ACTION_UUID);
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(broadcastReceiver, intentFilter);
 // WE NEED TO CREATE ANOTHER LIST FOR PAIRED DEVICES FOR ONLCIK EVENTS FUNCTION
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        Set<BluetoothDevice> pairedDevices = bluetoothAdaptera.getBondedDevices();
 
         if (pairedDevices.size() > 0) {
             // There are paired devices. Get the name and address of each paired device.
@@ -164,11 +169,13 @@ public class MainActivity extends AppCompatActivity {
 
 
             String address = bluetoothDevices.get(position);
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
+            BluetoothDevice device = bluetoothAdaptera.getRemoteDevice(address);
+            Log.i("BTDevice C Name", device.getAddress());
             Log.d(TAG, address);
 
             BluetoothSocket tmp=null;
 
+            bluetoothAdaptera.cancelDiscovery();
             mmDevice = device;
             try {
                 // Use the UUID of the device that discovered //
@@ -176,8 +183,12 @@ public class MainActivity extends AppCompatActivity {
                 {
                     Log.i(TAG, "Device Name1: " + mmDevice.getName());
                     Log.i(TAG, "Device UUID1: " + mmDevice.getUuids()[0].getUuid());
-                    tmp = device.createRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
-                    Log.i("DEvice UUID","socket created successfully");
+                    tmp = device.createRfcommSocketToServiceRecord( mmDevice.getUuids()[0].getUuid());
+//                    createMethod = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] { int.class });
+//                    tmp = (BluetoothSocket)createMethod.invoke(device, 1);
+
+                    // tmp = device.createInsecureRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
+                    Log.i("DEvice UUID","socket created successfully with device uuid");
                 }
                 else Log.d(TAG, "Device is null.");
             }
@@ -186,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
                 try {
                     tmp = device.createRfcommSocketToServiceRecord(DEFAULT_UUID);
-                    Log.i("default UUID","socket created successfully");
+                    Log.i("default UUID","socket created successfully with default uuid");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                     Log.i("IOEX","printStack");
@@ -198,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
 
             socket = tmp;
 
-            bluetoothAdapter.cancelDiscovery();
             try {
                 Log.i(TAG,"Trying to connect");
                 // Connect to the remote device through the socket. This call blocks
@@ -209,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
                 // Unable to connect; close the socket and return.
                 try {
                     socket.close();
-                    Log.i(TAG,"sockket closed");
+                    Log.i(TAG,"connection faled - socket closed");
                 } catch (IOException closeException) {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
