@@ -1,5 +1,6 @@
 package com.example.bluetoothhc;
 
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,8 +29,7 @@ import java.util.UUID;
 import static com.example.bluetoothhc.R.id.listView;
 
 public class MainActivity extends AppCompatActivity {
-    private  BluetoothSocket socket;
-    private  BluetoothDevice mmDevice;
+
    // private UUID DEFAULT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     ListView listView;
@@ -165,64 +165,52 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Log.i("clickList1","itemclicked");
+             final BluetoothServerSocket mmServerSocket;
+            BluetoothServerSocket tmp = null;
+            try {
+                // MY_UUID is the app's UUID string, also used by the client code.
+                tmp = bluetoothAdaptera.listenUsingRfcommWithServiceRecord("bluetoothHC", myUUID);
+                Log.i(TAG, "Socket's listen() method passed");
+            } catch (IOException e) {
+                Log.i(TAG, "Socket's listen() method failed");
+            }
+            mmServerSocket = tmp;
+            BluetoothSocket socket=null;
+            try {
+                Log.i(TAG, "Socket's accept()?????");
+                socket = mmServerSocket.accept();
+                Log.i(TAG, "Socket's accept() method passed");
+                if(socket != null){
+                    try {
+                        socket.connect();
+                        Log.i(TAG, "Socket connect passed part 1");
+                    } catch (IOException e) {
+                        Log.i(TAG, "Socket connect fails part 1");
+                    }
+                }
+            } catch (IOException e) {
+                Log.i(TAG, "Socket's accept() method failed");
+            }
+            Log.i(TAG, "SocketLLLLLLLLLLLLLLLLLLLLLLL");
 
-
-            String address = (String)arrayAdapter.getItem(position);
-            BluetoothDevice device = bluetoothAdaptera.getRemoteDevice(address);
-            Log.i("BTDevice C Name", device.getAddress());
-            Log.d(TAG, address);
-
-            BluetoothSocket tmp=null;
 
             bluetoothAdaptera.cancelDiscovery();
-            mmDevice = device;
-            try {
-                // Use the UUID of the device that discovered //
-                if (mmDevice != null)
-                {
-                    Log.i(TAG, "Device Name1: " + mmDevice.getName());
-                    Log.i(TAG, "Device UUID1: " + mmDevice.getUuids()[0].getUuid());
-                    tmp = device.createRfcommSocketToServiceRecord( mmDevice.getUuids()[0].getUuid());
-//                    createMethod = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] { int.class });
-//                    tmp = (BluetoothSocket)createMethod.invoke(device, 1);
 
-                    // tmp = device.createInsecureRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
-                    Log.i("DEvice UUID","socket created successfully with device uuid");
-                }
-                else Log.d(TAG, "Device is null.");
+            BluetoothDevice device = socket.getRemoteDevice();
+           final BluetoothSocket soc;
+            BluetoothSocket tmpSoc=null;
+            try{
+                tmpSoc = device.createRfcommSocketToServiceRecord(device.getUuids()[0].getUuid());
+                Log.i("error","tmpSoc passed");
+            }catch(IOException e){
+                Log.i("error","tmpSoc failed");
             }
-            catch (NullPointerException e)
-            {
-                Log.d(TAG, " UUID from device is null, Using Default UUID, Device name: " + device.getName());
-                try {
-                    tmp = device.createRfcommSocketToServiceRecord(myUUID);
-                    Log.i("default UUID","socket created successfully with default uuid");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                    Log.i("IOEX","printStack");
-                }
-            }
-            catch (IOException e) {
-                Log.i("IOException","2");
-            }
+            soc=tmpSoc;
+            try{
+                soc.connect();  Log.i("error","soc passed");
+            }catch (IOException e){
+                Log.i("error","soc failed");
 
-            socket = tmp;
-
-            try {
-                Log.i(TAG,"Trying to connect");
-                // Connect to the remote device through the socket. This call blocks
-                // until it succeeds or throws an exception.
-                socket.connect();
-                Log.i(TAG,"connection_successful");
-            } catch (IOException connectException) {
-                // Unable to connect; close the socket and return.
-                try {
-                    socket.close();
-                    Log.i(TAG,"connection failed - socket closed");
-                } catch (IOException closeException) {
-                    Log.e(TAG, "Could not close the client socket", closeException);
-                }
-                return;
             }
 
         }
