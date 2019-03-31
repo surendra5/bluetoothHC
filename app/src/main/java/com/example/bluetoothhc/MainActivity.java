@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
     public void SearchClicked(View view){
+        arrayAdapter.clear();
         statusView.setText("Searching...");
         searchButton.setEnabled(false);
         Log.i("info - searchClicked","search button Disabled");
@@ -219,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
                 // Unable to connect; close the socket and return.
                 try {
                     socket.close();
-                    Log.i(TAG,"connection faled - socket closed");
+                    Log.i(TAG,"connection failed - socket closed");
                 } catch (IOException closeException) {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
