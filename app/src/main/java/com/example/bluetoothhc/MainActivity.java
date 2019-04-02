@@ -162,62 +162,56 @@ public class MainActivity extends AppCompatActivity {
 
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Log.i("clickList1","itemclicked");
-             final BluetoothServerSocket mmServerSocket;
-            BluetoothServerSocket tmp = null;
-            try {
-                // MY_UUID is the app's UUID string, also used by the client code.
-                tmp = bluetoothAdaptera.listenUsingRfcommWithServiceRecord("bluetoothHC", myUUID);
-                Log.i(TAG, "Socket's listen() method passed");
-            } catch (IOException e) {
-                Log.i(TAG, "Socket's listen() method failed");
-            }
-            mmServerSocket = tmp;
-            BluetoothSocket socket=null;
-            while(socket==null) {
-                try {
-                    Log.i(TAG, "Socket's accept()?????");
-                    socket = mmServerSocket.accept();
-                    Log.i(TAG, "Socket's accept() method passed");
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.i("clickList1", "itemclicked");
+                ClientClass clientClass = new ClientClass(arrayAdapter[position]);
+                clientClass.start();
 
-                } catch (IOException e) {
-                    Log.i(TAG, "Socket's accept() method failed");
-                }
-                if (socket != null) {
-                    Log.i("socket", "not nULL");
-                    break;
-                }
-            }
-            Log.i(TAG, "SocketLLLLLLLLLLLLLLLLLLLLLLL");
-          //  socket=tmp2;
-
-            bluetoothAdaptera.cancelDiscovery();
-
-            BluetoothDevice device = socket.getRemoteDevice();
-
-           final BluetoothSocket soc;
-            BluetoothSocket tmpSoc=null;
-            try{
-                tmpSoc = device.createRfcommSocketToServiceRecord(device.getUuids()[0].getUuid());
-                Log.i("error","tmpSoc passed");
-            }catch(IOException e){
-                Log.i("error","tmpSoc failed");
-            }
-            soc=tmpSoc;
-            try{
-                soc.connect();  Log.i("error","soc passed");
-            }catch (IOException e){
-                Log.i("error","soc failed");
-
+                statusView.setText("Connecting...");
             }
 
         }
-    });
+
+        );
 
     }
 
+    private class ClientClass extends Thread{
+        private BluetoothDevice mmDevice;
+        private BluetoothSocket mmSocket;
+
+        public ClientClass(BluetoothDevice device1){
+            mmDevice=device1;
+            try{
+                Log.i("RfService","Creating");
+                mmSocket = mmDevice.createRfcommSocketToServiceRecord(myUUID);
+                Log.i("RfService","Created Successfully");
+            }catch(IOException e){
+                Log.i("RfService","Failed");
+                e.printStackTrace();
+            }
+        }
+
+        public void run(){
+            try{
+                bluetoothAdaptera.cancelDiscovery();
+                Log.i("socket","opening");
+                mmSocket.connect();
+                Log.i("socket","openend Successfully");
+            }catch (IOException connectException{
+                Log.i("socket","failed");
+                    // Unable to connect; close the socket and return.
+                    try {
+                        mmSocket.close();
+                        Log.i("socket","closed Successfully");
+                    } catch (IOException closeException) {
+                        Log.e(TAG, "Could not close the client socket", closeException);
+                    }
+
+            }
+        }
+    }
 
     @Override
     protected void onDestroy() {
